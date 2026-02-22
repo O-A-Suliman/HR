@@ -1,0 +1,18 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment (مهم جداً ألا ترفعه!)
+venv/
+env/
+ENV/
+
+# Database (لا نرفع قاعدة البيانات الخاصة بنا)
+db.sqlite3
+
+# Environment variables (لإخفاء كلمات المرور لاحقاً)
+.env
+
+# Media files (صور الموظفين والملفات المرفوعة)
+media/

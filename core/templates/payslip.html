@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Payslip</title>
+    <style>
+        /* إعدادات الصفحة والهوامش باستخدام قواعد xhtml2pdf الخاصة */
+        @page {
+            size: A4 portrait;
+            margin: 1cm;
+            /* تعريف إطار ثابت للتذييل يظهر في كل صفحة */
+            @frame footer_frame {
+                -pdf-frame-content: footerContent;
+                bottom: 0cm;
+                margin-left: 1cm;
+                margin-right: 1cm;
+                height: 1cm;
+            }
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            color: #333;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        /* الترويسة مع اللوجو واسم الشركة */
+        .header-container {
+            display: block;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .company-logo {
+            width: 120px;
+            height: auto;
+            vertical-align: middle;
+        }
+        .company-details {
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 20px;
+        }
+        .company-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #0056b3;
+            margin: 0;
+        }
+        .payslip-title {
+            text-align: right;
+            float: right;
+        }
+        .payslip-title h2 {
+            margin: 0;
+            color: #555;
+            font-size: 24px;
+            text-transform: uppercase;
+        }
+        .payslip-period {
+            font-size: 14px;
+            color: #777;
+        }
+
+        /* أقسام المعلومات */
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #0056b3;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            margin-top: 20px;
+        }
+
+        .info-grid {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .info-grid td {
+            padding: 6px 10px;
+            vertical-align: top;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #555;
+            width: 120px;
+        }
+
+        /* الجداول المالية */
+        .financial-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        .financial-table th {
+            background-color: #f4f7fa;
+            color: #333;
+            font-weight: bold;
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 2px solid #0056b3;
+        }
+        .financial-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .amount-col {
+            text-align: right;
+            font-family: Courier, monospace;
+        }
+        .earning-text { color: #28a745; }
+        .deduction-text { color: #dc3545; }
+
+        /* قسم الصافي النهائي */
+        .net-pay-container {
+            margin-top: 30px;
+            background-color: #eef6fc;
+            border: 1px solid #cce5ff;
+            padding: 15px;
+            text-align: right;
+            border-radius: 5px;
+        }
+        .net-pay-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0056b3;
+            margin-right: 15px;
+        }
+        .net-pay-amount {
+            font-size: 26px;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        /* الملاحظات والتذييل */
+        .notes {
+            margin-top: 30px;
+            font-size: 11px;
+            color: #777;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        
+        #footerContent {
+            text-align: center;
+            font-size: 9px;
+            color: #aaa;
+            border-top: 1px solid #ddd;
+            padding-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="footerContent">
+        © {{ year }} TechCorp Solutions. This is a system-generated document. | Confidential
+    </div>
+
+    <div class="header-container">
+        <div class="company-details">
+            <p class="company-name">TechCorp Solutions</p>
+            <p style="margin: 0;">123 Business Park, Innovation St.</p>
+        </div>
+        <div class="payslip-title">
+            <h2>Payslip</h2>
+            <p class="payslip-period">Period: <strong>{{ month }}/{{ year }}</strong></p>
+        </div>
+        <div style="clear: both;"></div>
+    </div>
+
+    <div class="section-title">EMPLOYEE SUMMARY</div>
+    <table class="info-grid">
+        <tr>
+            <td class="info-label">Employee Name:</td>
+            <td><strong>{{ employee }}</strong></td>
+            <td class="info-label">Payment Date:</td>
+            <td>{% now "d-m-Y" %}</td>
+        </tr>
+    </table>
+
+    <div style="display: inline-block; width: 48%; vertical-align: top; margin-right: 2%;">
+        <div class="section-title">EARNINGS</div>
+        <table class="financial-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th class="amount-col">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Basic Salary</td>
+                    <td class="amount-col">${{ basic_salary|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td>Allowances & Bonuses</td>
+                    <td class="amount-col earning-text">+ ${{ allowances|floatformat:2 }}</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td style="font-weight: bold; border-top: 2px solid #ddd;">Total Earnings</td>
+                    <td class="amount-col" style="font-weight: bold; border-top: 2px solid #ddd;">${{ basic_salary|add:allowances|floatformat:2 }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div style="display: inline-block; width: 48%; vertical-align: top;">
+        <div class="section-title">DEDUCTIONS</div>
+        <table class="financial-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th class="amount-col">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Unpaid Leave ({{ unpaid_leave_days }} days)</td>
+                    <td class="amount-col deduction-text">-</td> 
+                </tr>
+                
+                <tr>
+                    <td>Loan Installment (Monthly)</td>
+                    <td class="amount-col deduction-text">- ${{ loan_installments|floatformat:2 }}</td>
+                </tr>
+                
+                <tr>
+                    <td>Other Deductions & Penalties</td>
+                    <td class="amount-col deduction-text">-</td>
+                </tr>
+            </tbody>
+             <tfoot>
+                <tr>
+                    <td style="font-weight: bold; border-top: 2px solid #ddd;">Total Deductions</td>
+                    <td class="amount-col deduction-text" style="font-weight: bold; border-top: 2px solid #ddd;">- ${{ deductions|floatformat:2 }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+    <div style="clear: both;"></div>
+
+    <div class="net-pay-container">
+        <span class="net-pay-label">NET PAYABLE AMOUNT:</span>
+        <span class="net-pay-amount">${{ net_salary|floatformat:2 }}</span>
+    </div>
+
+    <div class="notes">
+        <strong>Attendance Note:</strong> You have logged a total of {{ total_worked_hours }} working hours this month.
+        <br>
+        <em>* This payslip is computer-generated and does not require a signature.</em>
+    </div>
+
+</body>
+</html>
