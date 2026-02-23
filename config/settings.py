@@ -38,7 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'core',
+    'employees',
+    'attendance',
+    'leaves',
+    'payroll',
+    'dashboard',
 ]
 
 MIDDLEWARE = [
@@ -131,4 +135,4 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ],
 }
-AUTH_USER_MODEL = 'core.Employee'
+AUTH_USER_MODEL = 'employees.Employee'
