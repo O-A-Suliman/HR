@@ -6,6 +6,7 @@ from .models import Employee
 from rest_framework.views import APIView
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
 # Create your views here.
 
 class EmployeeViewSet(viewsets.ModelViewSet):
@@ -20,9 +21,14 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         return Employee.objects.all() 
     
 class DownloadSecureCVView(APIView):
-    permission_classes=[IsAuthenticated,IsAdminOrHR]
-    def get(self,request,pk):
-        employee=get_object_or_404(Employee,id=pk)
+    permission_classes=[IsAuthenticated]
+    def get(self,request,employee_id):
+        employee=get_object_or_404(Employee,id=employee_id)
+        if employee !=request.user and request.user.role in ['hr',"admin"]:
+            return Response(
+                {"detail": "عذراً، غير مصرح لك بتحميل هذا الملف."}, 
+                status=403
+            )
         if not employee.documents:
             raise Http404("لا يوجد مستند  لهذا الموظف")
         file_path=employee.documents.path
