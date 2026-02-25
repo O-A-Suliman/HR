@@ -32,4 +32,5 @@ class DownloadSecureCVView(APIView):
         if not employee.documents:
             raise Http404("لا يوجد مستند  لهذا الموظف")
         file_path=employee.documents.path
-        return FileResponse(open(file_path,'rb'))
+        custom_filename = f"CV_{employee.name.replace(' ', '_')}.pdf"
+        return FileResponse(open(file_path,'rb'),content_type='application/pdf',as_attachment=True,filename=custom_filename)
