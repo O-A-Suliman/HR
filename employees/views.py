@@ -24,7 +24,7 @@ class DownloadSecureCVView(APIView):
     permission_classes=[IsAuthenticated]
     def get(self,request,employee_id):
         employee=get_object_or_404(Employee,id=employee_id)
-        if employee !=request.user and request.user.role in ['hr',"admin"]:
+        if employee !=request.user and request.user.role not in ['hr',"admin"]:
             return Response(
                 {"detail": "عذراً، غير مصرح لك بتحميل هذا الملف."}, 
                 status=403
@@ -32,5 +32,5 @@ class DownloadSecureCVView(APIView):
         if not employee.documents:
             raise Http404("لا يوجد مستند  لهذا الموظف")
         file_path=employee.documents.path
-        custom_filename = f"CV_{employee.name.replace(' ', '_')}.pdf"
+        custom_filename = f"{employee.username.replace(' ', '_')}.pdf"
         return FileResponse(open(file_path,'rb'),content_type='application/pdf',as_attachment=True,filename=custom_filename)

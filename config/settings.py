@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'leaves',
     'payroll',
     'dashboard',
+    'audit',
 ]
 
 MIDDLEWARE = [
