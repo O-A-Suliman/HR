@@ -3,15 +3,16 @@ from .models import LeaveRequest
 from rest_framework import viewsets,status
 from employees.permissions import IsAdminOrHR
 from rest_framework.decorators import action
+from rest_framework.response import Response
 # Create your views here.
 class LeaveRequestViewSet(viewsets.ModelViewSet):
 
     serializer_class=LeaveRequestSerializer
     def get_queryset(self):
         user=self.request.user
-        if user.role is ['admin','hr']:
+        if user.role in ['admin','hr']:
             return LeaveRequest.objects.all()
-        return LeaveRequest.objects.filter(emplotee=user)
+        return LeaveRequest.objects.filter(employee=user)
     
     def perform_create(self, serializer):
         serializer.save(employee=self.request.user)

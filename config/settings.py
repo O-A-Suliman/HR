@@ -136,3 +136,7 @@ REST_FRAMEWORK = {
     ],
 }
 AUTH_USER_MODEL = 'employees.Employee'
+
+MEDIA_URL='media/'
+MEDIA_ROOT=BASE_DIR/'media/'
+PRIVATE_MEDIA_ROOT=BASE_DIR/'private_media/'
