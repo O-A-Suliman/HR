@@ -1,55 +1,72 @@
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.forms.models import model_to_dict
+from django.db.models.fields.files import FieldFile # 1. استدعاء مكتبة التعامل مع الملفات
 from .models import AuditLog
-from employees.models import Employee
-from .middleware import get_current_user # استدعاء الدالة التي تفتح الصندوق
+from .middleware import get_current_user
+import datetime
 
-# ==========================================
-# 1. الكاميرا الأولى: تعمل *قبل* الحفظ لتصوير البيانات القديمة
-# ==========================================
-@receiver(pre_save, sender=Employee)
-def capture_old_data(sender, instance, **kwargs):
-    # إذا كان الموظف لديه ID، فهذا يعني أنه مسجل مسبقاً (عملية تعديل)
-    if instance.pk: 
+# 2. الدالة المساعدة المطورة (تحول التواريخ والملفات إلى نصوص)
+def serialize_audit_data(obj):
+    if isinstance(obj, (datetime.datetime, datetime.date)):
+        return obj.isoformat()
+    elif isinstance(obj, FieldFile):  # إذا كان الحقل عبارة عن ملف
+        return obj.name if obj.name else None # احفظ اسم الملف فقط
+    elif isinstance(obj, dict):
+        return {k: serialize_audit_data(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [serialize_audit_data(v) for v in obj]
+    return obj
+
+
+@receiver(pre_save)
+def capture_old_values(sender, instance, **kwargs):
+    if sender.__name__ in ['AuditLog', 'Session', 'LogEntry', 'ContentType']:
+        return
+
+    if instance.pk:
         try:
-            # نذهب لقاعدة البيانات ونجلب بياناته القديمة قبل أن تتغير
-            old_data = sender.objects.get(pk=instance.pk)
-            # نحتفظ بالبيانات القديمة داخل المتغير instance بشكل مؤقت
-            instance._old_values = model_to_dict(old_data)
+            old_instance = sender.objects.get(pk=instance.pk)
+            # استخدام الدالة المطورة
+            instance._old_values = serialize_audit_data(model_to_dict(old_instance))
         except sender.DoesNotExist:
-            instance._old_values = {}
+            instance._old_values = None
     else:
-        # إذا لم يكن له ID، فهذا موظف جديد تماماً، ولا يوجد له بيانات قديمة
-        instance._old_values = {}
+        instance._old_values = None
 
+@receiver(post_save)
+def create_audit_log(sender, instance, created, **kwargs):
+    if sender.__name__ in ['AuditLog', 'Session', 'LogEntry', 'ContentType']:
+        return
 
-# ==========================================
-# 2. الكاميرا الثانية: تعمل *بعد* الحفظ لتسجيل كل شيء في الدفتر
-# ==========================================
-@receiver(post_save, sender=Employee)
-def log_the_action(sender, instance, created, **kwargs):
-    # نفتح الصندوق لنعرف من هو المستخدم الذي قام بهذه العملية
-    current_user = get_current_user()
+    user = get_current_user()
     
-    # نجهز البيانات الجديدة
-    new_values = model_to_dict(instance)
-    
-    # نحدد هل العملية "إنشاء" أم "تعديل"
-    if created:
-        action_type = 'create'
-        old_values = {}
-    else:
-        action_type = 'update'
-        # نستدعي البيانات القديمة التي احتفظنا بها في الكاميرا الأولى
-        old_values = getattr(instance, '_old_values', {})
+    # استخدام الدالة المطورة
+    new_values = serialize_audit_data(model_to_dict(instance))
+    old_values = getattr(instance, '_old_values', None)
 
-    # أخيراً: نكتب كل هذه المعلومات في دفتر AuditLog الذي صنعته أنت
+    action = 'CREATE' if created else 'UPDATE'
+
+    if action == 'UPDATE' and old_values:
+        changed_old = {}
+        changed_new = {}
+        for field, new_val in new_values.items():
+            old_val = old_values.get(field)
+            if str(old_val) != str(new_val):
+                changed_old[field] = str(old_val)
+                changed_new[field] = str(new_val)
+        
+        if not changed_old:
+            return
+            
+        old_values = changed_old
+        new_values = changed_new
+
     AuditLog.objects.create(
-        user=current_user if (current_user and current_user.is_authenticated) else None,
-        action=action_type,
-        model_name='Employee',
-        record_id=instance.pk,
+        user=user,
+        action=action,
+        model_name=sender.__name__,
+        record_id=str(instance.pk),
         old_values=old_values,
         new_values=new_values
     )
