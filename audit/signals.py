@@ -6,6 +6,7 @@ from .models import AuditLog
 from .middleware import get_current_user
 import datetime
 
+
 # 2. الدالة المساعدة المطورة (تحول التواريخ والملفات إلى نصوص)
 def serialize_audit_data(obj):
     if isinstance(obj, (datetime.datetime, datetime.date)):
@@ -21,6 +22,10 @@ def serialize_audit_data(obj):
 
 @receiver(pre_save)
 def capture_old_values(sender, instance, **kwargs):
+    # قائمة التطبيقات التي نريد مراقبتها
+    monitored_apps = ['employees', 'attendance', 'leaves', 'payroll']
+    if instance._meta.app_label not in monitored_apps:
+        return
     if sender.__name__ in ['AuditLog', 'Session', 'LogEntry', 'ContentType']:
         return
 
@@ -36,6 +41,10 @@ def capture_old_values(sender, instance, **kwargs):
 
 @receiver(post_save)
 def create_audit_log(sender, instance, created, **kwargs):
+    # قائمة التطبيقات التي نريد مراقبتها
+    monitored_apps = ['employees', 'attendance', 'leaves', 'payroll']
+    if instance._meta.app_label not in monitored_apps:
+        return
     if sender.__name__ in ['AuditLog', 'Session', 'LogEntry', 'ContentType']:
         return
 
